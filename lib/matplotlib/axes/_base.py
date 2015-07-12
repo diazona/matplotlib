@@ -2013,15 +2013,18 @@ class _AxesBase(martist.Artist):
                 x0, x1 = mtransforms.nonsingular(x0, x1, increasing=False,
                                                  expander=0.05)
             if self._xmargin > 0:
-                if self.get_xscale() == 'linear':
-                    delta = (x1 - x0) * self._xmargin
-                    x0 -= delta
-                    x1 += delta
-                else:     # log scale
-                    assert(0 < x0 < x1)
-                    factor = pow(x1 / x0, self._xmargin)
-                    x1 *= factor
-                    x0 /= factor
+                self.set_xbound(x0, x1)
+                try:
+                    transLimits = self.transLimits
+                except AttributeError as e:
+                    raise NotImplementedError(
+                        'margins are not implemented for non-separable axes')
+                else:
+                    invTrans = mtransforms.blended_transform_factory(self.transScale + transLimits, mtransforms.IdentityTransform()).inverted()
+                assert(x0 < x1)
+                p0 = invTrans.transform((-self._xmargin, -self._ymargin))
+                p1 = invTrans.transform((1 + self._xmargin, 1 + self._ymargin))
+                x0, x1 = p0[0], p1[0]
             if not _tight:
                 x0, x1 = xlocator.view_limits(x0, x1)
             self.set_xbound(x0, x1)
@@ -2043,15 +2046,18 @@ class _AxesBase(martist.Artist):
                 y0, y1 = mtransforms.nonsingular(y0, y1, increasing=False,
                                                  expander=0.05)
             if self._ymargin > 0:
-                if self.get_yscale() == 'linear':
-                    delta = (y1 - y0) * self._ymargin
-                    y0 -= delta
-                    y1 += delta
-                else:     # log scale
-                    assert(0 < y0 < y1)
-                    factor = pow(y1 / y0, self._ymargin)
-                    y1 *= factor
-                    y0 /= factor
+                self.set_ybound(y0, y1)
+                try:
+                    transLimits = self.transLimits
+                except AttributeError as e:
+                    raise NotImplementedError(
+                        'margins are not implemented for non-separable axes')
+                else:
+                    invTrans = mtransforms.blended_transform_factory(mtransforms.IdentityTransform(), self.transScale + transLimits).inverted()
+                assert(y0 < y1)
+                p0 = invTrans.transform((-self._xmargin, -self._ymargin))
+                p1 = invTrans.transform((1 + self._xmargin, 1 + self._ymargin))
+                y0, y1 = p0[1], p1[1]
             if not _tight:
                 y0, y1 = ylocator.view_limits(y0, y1)
             self.set_ybound(y0, y1)
